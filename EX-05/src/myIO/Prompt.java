@@ -30,4 +30,5 @@ public class Prompt {
 		System.out.println(text);
 		return scanner.next();
 	}
+
 }

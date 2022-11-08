@@ -9,7 +9,7 @@ import java.util.Random;
 public class ComputerPlayer implements IPlayer
 {
 	private Token token;
-	private static final double WINNING_SCORE = 1;
+	private static final double WINNING_SCORE = 10;
 	//Doing something sooner than later is better (decrease score with increasing depth)
 	private static final double DEPTH_FACTOR = 0.95;
 	private static final int DEPTH = 5;
@@ -104,7 +104,58 @@ public class ComputerPlayer implements IPlayer
 	}
 	/** returns a naive guess of how good the move was */
 	private double naiveScoreGuess(int col, int row, Token[][] board, Token player) {
-		return 0; //here is a lot of room for improvement!
+		
+		
+		double score = 0;
+		
+		//this scoring method is pretty lazy as it ignores the last row and column to make the code easier
+		for(int i = 0; i<VierGewinnt.COLS-1; i++) {
+			for(int j = 0; j<VierGewinnt.ROWS-1; j++) {
+				score += getScoreIndicator(i,j,board);
+			}
+		}
+		
+		//Since every Score indicator is between zero and one the maximum score is the amount of fields
+		final double maxScore = VierGewinnt.COLS * VierGewinnt.ROWS;
+		//This maximum Scored to scale the score
+		return score * getFactor(player) / maxScore * WINNING_SCORE;
+	}
+	/** gets a very rough estimate of how good this position on the board is
+	 * this estimate is always between 0 and 1
+	 * */
+	private double getScoreIndicator(int i,int j, Token[][] board){
+		
+		Token startToken = board[i][j];
+		
+		if(startToken == Token.empty) return 0;
+		
+		double centreCollumn = VierGewinnt.COLS / 2.0;
+		double distToEdge = Math.abs(centreCollumn-(double)i)/centreCollumn;
+		distToEdge = 1.0-distToEdge;
+		
+		double score = 0;
+		
+		//positions near the center are generally better
+		score += distToEdge*0.4;
+		
+		//Succeeding stones of the same type are generally better
+		if(startToken == board[i][j+1]) score += 0.2;
+		if(startToken == board[i+1][j]) score += 0.2;
+		if(startToken == board[i+1][j+1]) score += 0.2;
+		//the second type of diagonal is ignored
+		
+		return score*getFactor(startToken);
+	}
+	private static double getFactor(Token token) {
+		switch(token) {
+		case player1:
+			return 1;
+		case player2:
+			return -1;
+		default:
+			return 0;
+		
+		}
 	}
 	/**
 	 * Checks for at least four equal tokens in a row in either direction, starting
