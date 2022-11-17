@@ -1,3 +1,5 @@
+//Sigrist Cedric 22-120-844
+//Moritz Scholz 22-122-071
 package matricies;
 
 import java.io.File;
@@ -6,11 +8,11 @@ import java.io.FileNotFoundException;
 import myIO.Read;
 
 
-
+/** implements a matrices for integers */
 public class Matrix {
 	private int[][] data;
 	
-	
+	/** constructs an empty m*n matrix */
 	public Matrix(int m, int n) {
 		this(new int[m][n]);
 	}
@@ -20,7 +22,6 @@ public class Matrix {
 	}
 	
 	/* Getters and setters */
-	
 	private int rows() {
 		return data.length;
 	}
@@ -40,16 +41,12 @@ public class Matrix {
 	public void set(int i, int j, int value) {
 		this.data[i][j] = value;
 	}
-	/** gets tha value from the given indices */
+	/** gets the value from the given indices */
 	public int get(int i, int j) {
 		return data[i][j];
 	}
 		
-	/**
-	 * Transposes a matrix
-	 * @param A the input (square) matrix
-	 * @return the transposed matrix
-	 */
+	/** Transposes a matrix without changing this instance */
 	public Matrix transposed(){
 		
 		Matrix transposedMatrix = new Matrix(collumns(), rows());

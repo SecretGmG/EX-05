@@ -1,3 +1,5 @@
+//Sigrist Cedric 22-120-844
+//Moritz Scholz 22-122-071
 package matricies;
 
 import java.io.File;
@@ -11,7 +13,7 @@ public class MatrixTest {
 	public static final String TEST_PATH_4 = "src/testFiles/testMatrix4.txt";
 
 	public static void main(String[] args) {
-		testMatrix();
+		//testMatrix();
 		testMatrixOperations();
 	}
 

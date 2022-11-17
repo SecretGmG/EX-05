@@ -1,4 +1,5 @@
-
+//Sigrist Cedric 22-120-844
+//Moritz Scholz 22-122-071
 /* ************************************************************************* *\
 *                Programmierung 1 HS 2020 - Serie 5-1                         * 
 \* ************************************************************************* */
@@ -114,8 +115,7 @@ public class VierGewinnt {
 				}
 			}
 		}
-
-		// if no empty cell was found return true
+		//if no empty cell was found return true
 		return true;
 	}
 
@@ -125,10 +125,13 @@ public class VierGewinnt {
 	 */
 	private boolean checkVierGewinnt(int col, int row) {
 		
+		//count the token streaks in all 4 directions
 		int hStreak = checkDir(col,row,-1,0)+checkDir(col,row,1,0)+1;
 		int vStreak = checkDir(col,row,0,-1)+checkDir(col,row,0,1)+1;
 		int d1Streak = checkDir(col,row,-1,-1)+checkDir(col,row,1,1)+1;
 		int d2Streak = checkDir(col,row,1,-1)+checkDir(col,row,-1,1)+1;
+		
+		//if any streak is bigger than WINNING_CONDITION a winning move was played
 		return hStreak >= WINNING_CONDITION || vStreak >= WINNING_CONDITION || d1Streak >= WINNING_CONDITION || d2Streak >= WINNING_CONDITION;
 	}
 	
@@ -148,6 +151,7 @@ public class VierGewinnt {
 		
 		return streak;
 	}
+	/** a simple function to check if a col, row cooridinate is outside the bounds of the playing field */
 	public static boolean isOutOfBounds(int col, int row) {
 		if(col < 0 || col >= VierGewinnt.COLS) return true;
 		if(row < 0 || row >= VierGewinnt.ROWS) return true;
@@ -170,7 +174,6 @@ public class VierGewinnt {
 	/**
 	 * returns a graphical representation of the board
 	 */
-
 	public static String displayBoard(Token[][] myBoard) {
 		String rowDelimiter = "+";
 		String rowNumbering = " ";

@@ -1,3 +1,5 @@
+//Sigrist Cedric 22-120-844
+//Moritz Scholz 22-122-071
 /* ************************************************************************* *\
 *                Programmierung 1 HS 2020 - Serie 5-1                         * 
 \* ************************************************************************* */
@@ -5,14 +7,56 @@ package game;
 import java.util.ArrayList;
 import java.util.Random;
 
-/** A very stupid computer player */
+
+/** A surprisingly good Computer player
+ * 
+ * 
+ * This class implements a simple version of a min-max algorithm.
+ * 
+ * Most constants have been (empirically) chosen to 
+ *  1) keep the runtime acceptable
+ *  2) make the computer player play better moves
+ *  3) make the computer player play more 'natural/good looking' moves 
+ * 
+ * The primary principle is to assign each position a score and where higher scores
+ * represent better positions. (for the current player in this implementation)
+ * 
+ * Summed up: 
+ * 		positive score <=> the computer thinks the current player is winning
+ * 		negative score <=> the computer thinks the current player is loosing
+ * 
+ * The positions are recursively checked up to a depth of DEPTH meaning:
+ * every possible move and their responses are checked 'DEPTH responses' deep.
+ * 
+ * When the maximal depth is reached the score is simply guessed.
+ * In this implementation this counts how many tokens the current player has near the center column.
+ * 
+ * 
+ * Room for improvement:
+ * Keeping track of previously evaluated positions would immensely improve the runtime and would allow higher depth.
+ * Improving the 'score guessing' would improve the computers move by a lot possible heuristics to include would be:
+ * 		1)how many connected groups of tokens the players have
+ * 		2)are these groups blocked of or not
+ * 		3)how many tokens do need to be placed to possibly expand a group
+ * 		4)...
+ * A better score guessing would also make possible to prioritize which moves to check first potentially reducing the runtime too.
+ * 
+ * Despite all this I am quite happy about the moves the Computer player chooses
+ * */
 public class ComputerPlayer implements IPlayer
 {
 	private Token token;
+	//The scored assigned to a game with a winning position
 	private static final double WINNING_SCORE = 10;
 	//Doing something sooner than later is better (decrease score with increasing depth)
 	private static final double DEPTH_FACTOR = 0.95;
 	private static final int DEPTH = 5;
+	//How much of influence possible bad moves of the other player should have on the computers decision
+	//If this number is smaller the computer player will go for more "easy wins"
+	//If it is bigger only for forced wins
+	private static final double OTHER_PLAYER_ACCURACY_SCALAR = 0.8;
+	//The if this value is smaller the computer player will try to prevent more possible easy wins of the opponent
+	private static final double MY_ACCURACY_SCALAR = 0.95;
 	
 	public int getNextColumn( Token[][] board )
 	{
@@ -27,19 +71,23 @@ public class ComputerPlayer implements IPlayer
 	 */
 	public int getBestMove(Token[][] board) {
 		double[] scores = getScoresOfMoves(board, this.token, DEPTH);
-		ArrayList<Integer> maxIndecies = new ArrayList<Integer>();
-		maxIndecies.add(0);
+		
+		//getting the indices of all maximal scores
+		ArrayList<Integer> maxIndices = new ArrayList<Integer>();
+		maxIndices.add(0);
 		for(int i = 1; i<scores.length; i++) {
-			if(scores[i] == scores[maxIndecies.get(0)]) {
-				maxIndecies.add(i);
+			//if scores[i] has the same value, push to maxIndices
+			if(scores[i] == scores[maxIndices.get(0)]) {
+				maxIndices.add(i);
 			}
-			else if(scores[i]>scores[maxIndecies.get(0)]) {
-				maxIndecies.clear();
-				maxIndecies.add(i);
+			//if scores[i] is bigger, clear maxIndices and push scores[i]
+			else if(scores[i]>scores[maxIndices.get(0)]) {
+				maxIndices.clear();
+				maxIndices.add(i);
 			}
 		}
 		
-		return getRandElement(maxIndecies);
+		return getRandElement(maxIndices);
 	}
 	/** gets a random element of an integer arrayList */
 	private static int getRandElement(ArrayList<Integer> arrayList){
@@ -81,6 +129,7 @@ public class ComputerPlayer implements IPlayer
 		
 		double guess = guessScoreOfMove(col, row, newBoard, player);
 		
+		//Don't look any deeper if the position is winning
 		if(depth == 0 || Math.abs(guess)>=WINNING_SCORE) {
 			return guess;
 		}
@@ -96,53 +145,65 @@ public class ComputerPlayer implements IPlayer
 	 */
 	private double getScoreOfBoard(Token[][] board, Token player, int depth) {
 		double[] scores = getScoresOfMoves(board, player, depth);
-		return max(scores);
+		
+		
+		if(player == this.token) {
+			return max(scores)*MY_ACCURACY_SCALAR + getFiniteAverage(scores)*(1-MY_ACCURACY_SCALAR);
+		}else {
+			return max(scores)*OTHER_PLAYER_ACCURACY_SCALAR + getFiniteAverage(scores)*(1-OTHER_PLAYER_ACCURACY_SCALAR);
+		}
+		
 	}
+	/** returns the average of all finite elements of an array */
+	private static double getFiniteAverage(double[] arr) {
+		double sum = 0;
+		int elements = 0;
+		for(int i = 0; i<arr.length; i++) {
+			if(Double.isFinite(arr[i])){
+				sum += arr[i];
+				elements++;
+			}
+		}
+		return sum/elements;
+	}
+	/** gets a rough estimate of how good a given move is*/
 	private double guessScoreOfMove(int col, int row, Token[][] board, Token player) {
+		//if the move is winning return the winning score
 		if(checkForWin(col, row, board)) return WINNING_SCORE;
+		//otherwise guess
 		return naiveScoreGuess(col,row,board,player);
 	}
-	/** returns a naive guess of how good the move was */
+	/** returns a naive estimate of how good the move was 
+	 *  there is a lot of room for improvement in this function but it seems to work
+	 * */
 	private double naiveScoreGuess(int col, int row, Token[][] board, Token player) {
-		
-		
 		double score = 0;
 		
-		//this scoring method is pretty lazy as it ignores the last row and column to make the code easier
-		for(int i = 0; i<VierGewinnt.COLS-1; i++) {
-			for(int j = 0; j<VierGewinnt.ROWS-1; j++) {
+		//get a score indicator of every field and add them up
+		for(int i = 0; i<VierGewinnt.COLS; i++) {
+			for(int j = 0; j<VierGewinnt.ROWS; j++) {
 				score += getScoreIndicator(i,j,board);
 			}
 		}
 		
-		//Since every Score indicator is between zero and one the maximum score is the amount of fields
-		final double maxScore = VierGewinnt.COLS * VierGewinnt.ROWS;
-		//This maximum Scored to scale the score
-		return score * getFactor(player) / maxScore * WINNING_SCORE;
+		//Scale the value to never (realistically) be bigger then the winning score
+		final double scalar = VierGewinnt.COLS * VierGewinnt.ROWS/4;
+		return score * getFactor(player) / scalar * WINNING_SCORE;
 	}
 	/** gets a very rough estimate of how good this position on the board is
-	 * this estimate is always between 0 and 1
+	 * 	in respect to a certain index i,j
+	 *  this estimate is always between 0 and 1
+	 *  There is a lot of room for improvement in this function but it seems to work
 	 * */
 	private double getScoreIndicator(int i,int j, Token[][] board){
 		
 		Token startToken = board[i][j];
-		
 		if(startToken == Token.empty) return 0;
+		double centreColumn = (VierGewinnt.COLS-1) / 2.0; //the 'index' of the center column
+		double distToCentre = Math.abs(centreColumn-(double)i);
 		
-		double centreCollumn = VierGewinnt.COLS / 2.0;
-		double distToEdge = Math.abs(centreCollumn-(double)i)/centreCollumn;
-		distToEdge = 1.0-distToEdge;
-		
-		double score = 0;
-		
-		//positions near the center are generally better
-		score += distToEdge*0.4;
-		
-		//Succeeding stones of the same type are generally better
-		if(startToken == board[i][j+1]) score += 0.2;
-		if(startToken == board[i+1][j]) score += 0.2;
-		if(startToken == board[i+1][j+1]) score += 0.2;
-		//the second type of diagonal is ignored
+		//moves near the center are generally better
+		double score = 	1-distToCentre/centreColumn;
 		
 		return score*getFactor(startToken);
 	}
